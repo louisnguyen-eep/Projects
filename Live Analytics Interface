@@ -1,0 +1,320 @@
+import pandas as pd
+
+df = pd.read_excel('/content/drive/MyDrive/TableauSalesData.xlsx')
+
+# Filter only the Technology category
+tech_df = df[df['Category'] == 'Technology'].copy()
+
+# ----------- INTERACTIVE ANALYTICS FUNCTIONS -----------
+
+def TotalProfitBySelectedSubCats():
+    """Displays total profit for user-selected sub-categories in Technology."""
+    subcats = tech_df['Sub-Category'].unique()
+    print(f"\nAvailable Sub-Categories: {', '.join(subcats)}")
+    selected = input("Enter sub-categories separated by commas (or type 'all'): ").strip().lower()
+
+    if selected == 'all':
+        filtered = tech_df
+    else:
+        chosen = [s.strip().title() for s in selected.split(',')]
+        filtered = tech_df[tech_df['Sub-Category'].isin(chosen)]
+        if filtered.empty:
+            print("❌ No matching sub-categories found.")
+            return
+
+    result = filtered.groupby('Sub-Category')['Profit'].sum().sort_values(ascending=False)
+    print("\nTotal Profit by Selected Sub-Categories:\n")
+    print(result.apply(lambda x: f"${x:,.2f}"))
+
+def TopNTechProductsBySales():
+    """Displays top N technology products by sales, user-defined N."""
+    try:
+        n = int(input("Enter the number of top products to display: "))
+        if n <= 0:
+            raise ValueError
+    except ValueError:
+        print("❌ Please enter a valid positive number.")
+        return
+
+    top_products = tech_df.groupby('Product Name')['Sales'].sum().sort_values(ascending=False).head(n)
+    print(f"\nTop {n} Technology Products by Sales:\n")
+    print(top_products.apply(lambda x: f"${x:,.2f}"))
+
+def BottomNTechProductsByProfit():
+    """Displays bottom N tech products by profit, user-defined N."""
+    try:
+        n = int(input("Enter the number of bottom products to display: "))
+        if n <= 0:
+            raise ValueError
+    except ValueError:
+        print("❌ Please enter a valid positive number.")
+        return
+
+    bottom_products = tech_df.groupby('Product Name')['Profit'].sum().sort_values().head(n)
+    print(f"\nBottom {n} Technology Products by Profit:\n")
+    print(bottom_products.apply(lambda x: f"${x:,.2f}"))
+
+def MonthlySalesTrendByYear():
+    """Displays monthly sales trend for a user-specified year."""
+    tech_df['Order Date'] = pd.to_datetime(tech_df['Order Date'])
+    tech_df['Year'] = tech_df['Order Date'].dt.year
+    tech_df['Month'] = tech_df['Order Date'].dt.strftime('%B')
+
+    year_options = sorted(tech_df['Year'].unique())
+    print(f"\nAvailable Years: {', '.join(map(str, year_options))}")
+
+    try:
+        year = int(input("Enter the year for which you want to see sales trend: "))
+        if year not in year_options:
+            raise ValueError
+    except ValueError:
+        print("❌ Invalid year selected.")
+        return
+
+    filtered = tech_df[tech_df['Year'] == year]
+    monthly_sales = filtered.groupby('Month')['Sales'].sum()
+    ordered_months = pd.date_range("2023-01-01", periods=12, freq='M').strftime('%B')
+    monthly_sales = monthly_sales.reindex(ordered_months).dropna()
+
+    print(f"\nMonthly Sales Trend for {year}:\n")
+    print(monthly_sales.apply(lambda x: f"${x:,.2f}"))
+
+def TopNStatesByTechSales():
+    """Displays top N states by tech sales, user-defined N."""
+    try:
+        n = int(input("Enter the number of top states to display: "))
+        if n <= 0:
+            raise ValueError
+    except ValueError:
+        print("❌ Please enter a valid positive number.")
+        return
+
+    top_states = tech_df.groupby('State')['Sales'].sum().sort_values(ascending=False).head(n)
+    print(f"\nTop {n} States by Technology Sales:\n")
+    print(top_states.apply(lambda x: f"${x:,.2f}"))
+
+def ProfitToSalesRatioBySubCategory():
+    """Displays profit-to-sales ratio for selected sub-category or all."""
+    subcats = tech_df['Sub-Category'].unique()
+    print(f"\nAvailable Sub-Categories: {', '.join(subcats)}")
+    selected = input("Enter a sub-category (or type 'all'): ").strip().title()
+
+    grouped = tech_df.groupby('Sub-Category')[['Profit', 'Sales']].sum()
+    grouped['Profit-to-Sales %'] = (grouped['Profit'] / grouped['Sales']) * 100
+
+    if selected.lower() == 'all':
+        result = grouped[['Profit-to-Sales %']]
+    elif selected in subcats:
+        result = grouped.loc[[selected], ['Profit-to-Sales %']]
+    else:
+        print("❌ Sub-category not found.")
+        return
+
+    print("\nProfit-to-Sales Ratio:\n")
+    print(result.applymap(lambda x: f"{x:.2f}%"))
+
+# ----------- MAIN MENU SYSTEM -----------
+
+def MainMenu():
+    """Displays menu and runs analytics based on user selection."""
+    while True:
+        print("\n🔹 Welcome to the Technology Sales Analytics System 🔹")
+        print("Customize your data insights below:\n")
+        print("1. Total Profit by Selected Sub-Categories")
+        print("2. Top N Technology Products by Sales")
+        print("3. Bottom N Technology Products by Profit")
+        print("4. Monthly Sales Trend for a Selected Year")
+        print("5. Top N States by Technology Sales")
+        print("6. Profit-to-Sales Ratio by Sub-Category")
+        print("7. Exit\n")
+
+        choice = input("Enter your selection (1-7): ").strip()
+
+        # Input validation
+        if not choice.isdigit() or int(choice) not in range(1, 8):
+            print("❌ Invalid input. Please enter a number from 1 to 7.")
+            continue
+
+        # Convert choice to integer
+        choice = int(choice)
+
+        # Call corresponding function
+        if choice == 1:
+            TotalProfitBySelectedSubCats()
+        elif choice == 2:
+            TopNTechProductsBySales()
+        elif choice == 3:
+            BottomNTechProductsByProfit()
+        elif choice == 4:
+            MonthlySalesTrendByYear()
+        elif choice == 5:
+            TopNStatesByTechSales()
+        elif choice == 6:
+            ProfitToSalesRatioBySubCategory()
+        elif choice == 7:
+            print("👋 Thank you for using the Technology Sales Analytics System. Goodbye!")
+            break
+        print('\n\n\n-------------------------------------------------\n\n\n')
+
+# Run the interactive menu
+MainMenu()
+import pandas as pd
+
+df = pd.read_excel('/content/drive/MyDrive/TableauSalesData.xlsx')
+
+# Filter only the Technology category
+tech_df = df[df['Category'] == 'Technology'].copy()
+
+# ----------- INTERACTIVE ANALYTICS FUNCTIONS -----------
+
+def TotalProfitBySelectedSubCats():
+    """Displays total profit for user-selected sub-categories in Technology."""
+    subcats = tech_df['Sub-Category'].unique()
+    print(f"\nAvailable Sub-Categories: {', '.join(subcats)}")
+    selected = input("Enter sub-categories separated by commas (or type 'all'): ").strip().lower()
+
+    if selected == 'all':
+        filtered = tech_df
+    else:
+        chosen = [s.strip().title() for s in selected.split(',')]
+        filtered = tech_df[tech_df['Sub-Category'].isin(chosen)]
+        if filtered.empty:
+            print("❌ No matching sub-categories found.")
+            return
+
+    result = filtered.groupby('Sub-Category')['Profit'].sum().sort_values(ascending=False)
+    print("\nTotal Profit by Selected Sub-Categories:\n")
+    print(result.apply(lambda x: f"${x:,.2f}"))
+
+def TopNTechProductsBySales():
+    """Displays top N technology products by sales, user-defined N."""
+    try:
+        n = int(input("Enter the number of top products to display: "))
+        if n <= 0:
+            raise ValueError
+    except ValueError:
+        print("❌ Please enter a valid positive number.")
+        return
+
+    top_products = tech_df.groupby('Product Name')['Sales'].sum().sort_values(ascending=False).head(n)
+    print(f"\nTop {n} Technology Products by Sales:\n")
+    print(top_products.apply(lambda x: f"${x:,.2f}"))
+
+def BottomNTechProductsByProfit():
+    """Displays bottom N tech products by profit, user-defined N."""
+    try:
+        n = int(input("Enter the number of bottom products to display: "))
+        if n <= 0:
+            raise ValueError
+    except ValueError:
+        print("❌ Please enter a valid positive number.")
+        return
+
+    bottom_products = tech_df.groupby('Product Name')['Profit'].sum().sort_values().head(n)
+    print(f"\nBottom {n} Technology Products by Profit:\n")
+    print(bottom_products.apply(lambda x: f"${x:,.2f}"))
+
+def MonthlySalesTrendByYear():
+    """Displays monthly sales trend for a user-specified year."""
+    tech_df['Order Date'] = pd.to_datetime(tech_df['Order Date'])
+    tech_df['Year'] = tech_df['Order Date'].dt.year
+    tech_df['Month'] = tech_df['Order Date'].dt.strftime('%B')
+
+    year_options = sorted(tech_df['Year'].unique())
+    print(f"\nAvailable Years: {', '.join(map(str, year_options))}")
+
+    try:
+        year = int(input("Enter the year for which you want to see sales trend: "))
+        if year not in year_options:
+            raise ValueError
+    except ValueError:
+        print("❌ Invalid year selected.")
+        return
+
+    filtered = tech_df[tech_df['Year'] == year]
+    monthly_sales = filtered.groupby('Month')['Sales'].sum()
+    ordered_months = pd.date_range("2023-01-01", periods=12, freq='M').strftime('%B')
+    monthly_sales = monthly_sales.reindex(ordered_months).dropna()
+
+    print(f"\nMonthly Sales Trend for {year}:\n")
+    print(monthly_sales.apply(lambda x: f"${x:,.2f}"))
+
+def TopNStatesByTechSales():
+    """Displays top N states by tech sales, user-defined N."""
+    try:
+        n = int(input("Enter the number of top states to display: "))
+        if n <= 0:
+            raise ValueError
+    except ValueError:
+        print("❌ Please enter a valid positive number.")
+        return
+
+    top_states = tech_df.groupby('State')['Sales'].sum().sort_values(ascending=False).head(n)
+    print(f"\nTop {n} States by Technology Sales:\n")
+    print(top_states.apply(lambda x: f"${x:,.2f}"))
+
+def ProfitToSalesRatioBySubCategory():
+    """Displays profit-to-sales ratio for selected sub-category or all."""
+    subcats = tech_df['Sub-Category'].unique()
+    print(f"\nAvailable Sub-Categories: {', '.join(subcats)}")
+    selected = input("Enter a sub-category (or type 'all'): ").strip().title()
+
+    grouped = tech_df.groupby('Sub-Category')[['Profit', 'Sales']].sum()
+    grouped['Profit-to-Sales %'] = (grouped['Profit'] / grouped['Sales']) * 100
+
+    if selected.lower() == 'all':
+        result = grouped[['Profit-to-Sales %']]
+    elif selected in subcats:
+        result = grouped.loc[[selected], ['Profit-to-Sales %']]
+    else:
+        print("❌ Sub-category not found.")
+        return
+
+    print("\nProfit-to-Sales Ratio:\n")
+    print(result.applymap(lambda x: f"{x:.2f}%"))
+
+# ----------- MAIN MENU SYSTEM -----------
+
+def MainMenu():
+    """Displays menu and runs analytics based on user selection."""
+    while True:
+        print("\n🔹 Welcome to the Technology Sales Analytics System 🔹")
+        print("Customize your data insights below:\n")
+        print("1. Total Profit by Selected Sub-Categories")
+        print("2. Top N Technology Products by Sales")
+        print("3. Bottom N Technology Products by Profit")
+        print("4. Monthly Sales Trend for a Selected Year")
+        print("5. Top N States by Technology Sales")
+        print("6. Profit-to-Sales Ratio by Sub-Category")
+        print("7. Exit\n")
+
+        choice = input("Enter your selection (1-7): ").strip()
+
+        # Input validation
+        if not choice.isdigit() or int(choice) not in range(1, 8):
+            print("❌ Invalid input. Please enter a number from 1 to 7.")
+            continue
+
+        # Convert choice to integer
+        choice = int(choice)
+
+        # Call corresponding function
+        if choice == 1:
+            TotalProfitBySelectedSubCats()
+        elif choice == 2:
+            TopNTechProductsBySales()
+        elif choice == 3:
+            BottomNTechProductsByProfit()
+        elif choice == 4:
+            MonthlySalesTrendByYear()
+        elif choice == 5:
+            TopNStatesByTechSales()
+        elif choice == 6:
+            ProfitToSalesRatioBySubCategory()
+        elif choice == 7:
+            print("👋 Thank you for using the Technology Sales Analytics System. Goodbye!")
+            break
+        print('\n\n\n-------------------------------------------------\n\n\n')
+
+# Run the interactive menu
+MainMenu()
