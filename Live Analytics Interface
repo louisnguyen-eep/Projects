@@ -1,6 +1,6 @@
 import pandas as pd
 
-df = pd.read_excel('/content/drive/MyDrive/TableauSalesData.xlsx')
+df = pd.read_excel('TableauSalesData.xlsx')
 
 # Filter only the Technology category
 tech_df = df[df['Category'] == 'Technology'].copy()
